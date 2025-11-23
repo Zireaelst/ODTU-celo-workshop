@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
 import Link from 'next/link';
+import { HeaderSkeleton, LoadingSpinner } from './LoadingSkeletons';
 import CeloNetworkSwitcher from './CeloNetworkSwitcher';
 
 export default function Header() {

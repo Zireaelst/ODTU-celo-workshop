@@ -44,7 +44,7 @@ export default function Footer() {
             <ul className="space-y-2 text-sm">
               <li><Link href="/" className="text-gray-400 hover:text-white transition-colors">Browse Campaigns</Link></li>
               <li><Link href="/create" className="text-gray-400 hover:text-white transition-colors">Create Campaign</Link></li>
-              <li><Link href="/how-it-works" className="text-gray-400 hover:text-white transition-colors">How it Works</Link></li>
+              <li><Link href="/about" className="text-gray-400 hover:text-white transition-colors">About Us</Link></li>
               <li><Link href="/faq" className="text-gray-400 hover:text-white transition-colors">FAQ</Link></li>
             </ul>
           </div>
@@ -53,10 +53,10 @@ export default function Footer() {
           <div>
             <h3 className="font-semibold text-white mb-4">Resources</h3>
             <ul className="space-y-2 text-sm">
-              <li><a href="https://docs.celo.org" className="text-gray-400 hover:text-white transition-colors">Celo Docs</a></li>
-              <li><a href="https://celoscan.io" className="text-gray-400 hover:text-white transition-colors">Celoscan</a></li>
+              <li><a href="https://docs.celo.org" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">Celo Docs</a></li>
+              <li><a href="https://celoscan.io" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">Celoscan</a></li>
               <li><Link href="/terms" className="text-gray-400 hover:text-white transition-colors">Terms of Service</Link></li>
-              <li><Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</Link></li>
+              <li><a href="https://github.com/celo-org" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">GitHub</a></li>
             </ul>
           </div>
         </div>

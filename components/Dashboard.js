@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useCampaignFactory, useCampaignDetails } from '../hooks/useCampaignFactory';
 import CampaignCard from './CampaignCard';
+import { DashboardSkeleton, EmptyStateSkeleton } from './LoadingSkeletons';
+import { DashboardErrorBoundary, CampaignErrorBoundary } from './ErrorBoundary';
 import { formatCurrency } from '../lib/utils';
 
 const ITEMS_PER_PAGE = 6;
@@ -11,12 +13,29 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('all');
   const [currentPage, setCurrentPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('newest');
+  const [filterBy, setFilterBy] = useState('all'); // funding status filter
+  const [progressFilter, setProgressFilter] = useState('all'); // progress range filter
 
   const { campaignAddresses, activeCampaignAddresses, isLoading: factoryLoading } = useCampaignFactory();
   const { campaigns, isLoading: campaignsLoading } = useCampaignDetails(campaignAddresses);
 
   const isLoading = factoryLoading || campaignsLoading;
+
+  // Debounced search effect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [debouncedSearchTerm, activeTab, sortBy, filterBy, progressFilter]);
 
   // Filter and search campaigns
   const filteredCampaigns = useMemo(() => {
@@ -35,11 +54,55 @@ export default function Dashboard() {
       );
     }
 
-    // Filter by search term (search in creator address)
-    if (searchTerm) {
+    // Filter by search term (search in creator address and campaign address)
+    if (debouncedSearchTerm) {
+      const searchLower = debouncedSearchTerm.toLowerCase();
       filtered = filtered.filter(campaign =>
-        campaign.creator?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        campaign.address?.toLowerCase().includes(searchTerm.toLowerCase())
+        campaign.creator?.toLowerCase().includes(searchLower) ||
+        campaign.address?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Filter by funding status
+    if (filterBy === 'funded') {
+      filtered = filtered.filter(campaign => 
+        Number(campaign.progressPercentage || 0) >= 100
+      );
+    } else if (filterBy === 'underfunded') {
+      filtered = filtered.filter(campaign => 
+        Number(campaign.progressPercentage || 0) < 100
+      );
+    } else if (filterBy === 'ending-soon') {
+      filtered = filtered.filter(campaign => 
+        campaign.state === 0 && 
+        Number(campaign.timeRemaining) > 0 && 
+        Number(campaign.timeRemaining) <= 7 * 24 * 60 * 60 // 7 days
+      );
+    }
+
+    // Filter by progress range
+    if (progressFilter === '0-25') {
+      filtered = filtered.filter(campaign => 
+        Number(campaign.progressPercentage || 0) < 25
+      );
+    } else if (progressFilter === '25-50') {
+      filtered = filtered.filter(campaign => 
+        Number(campaign.progressPercentage || 0) >= 25 && 
+        Number(campaign.progressPercentage || 0) < 50
+      );
+    } else if (progressFilter === '50-75') {
+      filtered = filtered.filter(campaign => 
+        Number(campaign.progressPercentage || 0) >= 50 && 
+        Number(campaign.progressPercentage || 0) < 75
+      );
+    } else if (progressFilter === '75-100') {
+      filtered = filtered.filter(campaign => 
+        Number(campaign.progressPercentage || 0) >= 75 && 
+        Number(campaign.progressPercentage || 0) < 100
+      );
+    } else if (progressFilter === '100+') {
+      filtered = filtered.filter(campaign => 
+        Number(campaign.progressPercentage || 0) >= 100
       );
     }
 
@@ -51,16 +114,20 @@ export default function Dashboard() {
         case 'oldest':
           return Number(a.deadline) - Number(b.deadline);
         case 'progress':
-          return Number(b.progressPercentage) - Number(a.progressPercentage);
+          return Number(b.progressPercentage || 0) - Number(a.progressPercentage || 0);
         case 'goal':
-          return Number(b.goalAmount) - Number(a.goalAmount);
+          return Number(b.goalAmount || 0) - Number(a.goalAmount || 0);
+        case 'raised':
+          return Number(b.pledgedAmount || 0) - Number(a.pledgedAmount || 0);
+        case 'ending-soon':
+          return Number(a.timeRemaining || 0) - Number(b.timeRemaining || 0);
         default:
           return 0;
       }
     });
 
     return filtered;
-  }, [campaigns, activeTab, searchTerm, sortBy]);
+  }, [campaigns, activeTab, debouncedSearchTerm, sortBy, filterBy, progressFilter]);
 
   // Paginate campaigns
   const totalPages = Math.ceil(filteredCampaigns.length / ITEMS_PER_PAGE);
@@ -81,50 +148,7 @@ export default function Dashboard() {
   const totalContributors = campaigns.reduce((sum, campaign) => sum + Number(campaign.contributorCount || 0), 0);
 
   if (isLoading) {
-    return (
-      <div className="space-y-8">
-        {/* Loading Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="card p-6">
-              <div className="skeleton h-8 w-16 mb-2" />
-              <div className="skeleton h-4 w-20" />
-            </div>
-          ))}
-        </div>
-
-        {/* Loading Controls */}
-        <div className="flex flex-col lg:flex-row gap-4 justify-between">
-          <div className="skeleton h-10 w-64" />
-          <div className="flex gap-2">
-            <div className="skeleton h-10 w-32" />
-            <div className="skeleton h-10 w-24" />
-          </div>
-        </div>
-
-        {/* Loading Tabs */}
-        <div className="flex flex-wrap gap-2">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="skeleton h-10 w-24" />
-          ))}
-        </div>
-
-        {/* Loading Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="card overflow-hidden">
-              <div className="skeleton h-48 w-full" />
-              <div className="p-6 space-y-4">
-                <div className="skeleton h-4 w-3/4" />
-                <div className="skeleton h-4 w-1/2" />
-                <div className="skeleton h-3 w-full" />
-                <div className="skeleton h-10 w-full" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (!campaigns.length) {
@@ -147,7 +171,8 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-8">
+    <DashboardErrorBoundary>
+      <div className="space-y-8">
       {/* Campaign Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="card card-gradient p-6 group hover:scale-105 transition-transform duration-300">
@@ -211,35 +236,141 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Search and Sort Controls */}
-      <div className="flex flex-col lg:flex-row gap-4 justify-between">
-        <div className="relative flex-1 max-w-md">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+      {/* Enhanced Search and Filter Controls */}
+      <div className="card p-6 mb-6">
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Search Bar */}
+          <div className="relative flex-1 max-w-lg">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              placeholder="Search campaigns by creator or address..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="input-field pl-10 pr-4"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
-          <input
-            type="text"
-            placeholder="Search by creator or campaign address..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="input-field pl-10"
-          />
+          
+          {/* Filters */}
+          <div className="flex flex-wrap gap-3">
+            {/* Sort By */}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="input-field min-w-[160px]"
+              title="Sort campaigns by"
+            >
+              <option value="newest">📅 Newest First</option>
+              <option value="oldest">📅 Oldest First</option>
+              <option value="progress">📊 By Progress</option>
+              <option value="raised">💰 Most Raised</option>
+              <option value="goal">🎯 Highest Goal</option>
+              <option value="ending-soon">⏰ Ending Soon</option>
+            </select>
+
+            {/* Status Filter */}
+            <select
+              value={filterBy}
+              onChange={(e) => setFilterBy(e.target.value)}
+              className="input-field min-w-[140px]"
+              title="Filter by status"
+            >
+              <option value="all">All Campaigns</option>
+              <option value="funded">✅ Fully Funded</option>
+              <option value="underfunded">📈 Needs Funding</option>
+              <option value="ending-soon">⚡ Ending Soon</option>
+            </select>
+
+            {/* Progress Filter */}
+            <select
+              value={progressFilter}
+              onChange={(e) => setProgressFilter(e.target.value)}
+              className="input-field min-w-[140px]"
+              title="Filter by progress"
+            >
+              <option value="all">Any Progress</option>
+              <option value="0-25">🟥 0-25%</option>
+              <option value="25-50">🟧 25-50%</option>
+              <option value="50-75">🟨 50-75%</option>
+              <option value="75-100">🟩 75-100%</option>
+              <option value="100+">🎉 Over-funded</option>
+            </select>
+          </div>
         </div>
-        
-        <div className="flex gap-3">
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="input-field min-w-[140px]"
-          >
-            <option value="newest">Newest First</option>
-            <option value="oldest">Oldest First</option>
-            <option value="progress">By Progress</option>
-            <option value="goal">By Goal Amount</option>
-          </select>
-        </div>
+
+        {/* Active Filters Display */}
+        {(debouncedSearchTerm || filterBy !== 'all' || progressFilter !== 'all') && (
+          <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-gray-100">
+            <span className="text-sm text-gray-600 font-medium">Active filters:</span>
+            
+            {debouncedSearchTerm && (
+              <div className="flex items-center gap-1 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                <span>Search: "{debouncedSearchTerm}"</span>
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="text-blue-600 hover:text-blue-800"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
+            
+            {filterBy !== 'all' && (
+              <div className="flex items-center gap-1 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
+                <span>Status: {filterBy}</span>
+                <button
+                  onClick={() => setFilterBy('all')}
+                  className="text-green-600 hover:text-green-800"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
+            
+            {progressFilter !== 'all' && (
+              <div className="flex items-center gap-1 bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">
+                <span>Progress: {progressFilter}%</span>
+                <button
+                  onClick={() => setProgressFilter('all')}
+                  className="text-purple-600 hover:text-purple-800"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
+
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setFilterBy('all');
+                setProgressFilter('all');
+              }}
+              className="text-sm text-gray-500 hover:text-gray-700 underline ml-2"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Tab Navigation */}
@@ -271,24 +402,31 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Results Header */}
+      {/* Results Summary */}
       {filteredCampaigns.length > 0 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-600">
-            Showing {paginatedCampaigns.length} of {filteredCampaigns.length} campaigns
-            {searchTerm && (
-              <span className="ml-2">
-                for "<span className="font-medium text-gray-900">{searchTerm}</span>"
-              </span>
-            )}
+        <div className="flex items-center justify-between mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+              <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </div>
+            <div>
+              <div className="font-semibold text-blue-900">
+                Showing {filteredCampaigns.length} campaign{filteredCampaigns.length !== 1 ? 's' : ''}
+              </div>
+              <div className="text-sm text-blue-700">
+                {totalPages > 1 && `Page ${currentPage + 1} of ${totalPages} • `}
+                {(debouncedSearchTerm || filterBy !== 'all' || progressFilter !== 'all') ? 'Filtered results' : 'All campaigns'}
+              </div>
+            </div>
           </div>
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm('')}
-              className="btn-ghost text-sm"
-            >
-              Clear search
-            </button>
+          
+          {totalPages > 1 && (
+            <div className="text-sm text-blue-600 font-medium">
+              {ITEMS_PER_PAGE * currentPage + 1}-{Math.min(ITEMS_PER_PAGE * (currentPage + 1), filteredCampaigns.length)} 
+              {' '}of {filteredCampaigns.length}
+            </div>
           )}
         </div>
       )}
@@ -303,11 +441,13 @@ export default function Dashboard() {
               </div>
             </div>
             <h3 className="text-2xl font-bold text-gray-800 mb-3">
-              {searchTerm ? 'No matching campaigns' : `No ${activeTab === 'all' ? '' : activeTab} campaigns`}
+              {(debouncedSearchTerm || filterBy !== 'all' || progressFilter !== 'all') 
+                ? 'No matching campaigns found' 
+                : `No ${activeTab === 'all' ? '' : activeTab} campaigns`}
             </h3>
             <p className="text-gray-600 mb-6">
-              {searchTerm ? (
-                'Try adjusting your search terms or browse all campaigns.'
+              {(debouncedSearchTerm || filterBy !== 'all' || progressFilter !== 'all') ? (
+                'Try adjusting your search terms and filters, or browse all campaigns.'
               ) : activeTab === 'active' ? (
                 'There are no active campaigns at the moment. Be the first to create one!'
               ) : activeTab === 'successful' ? (
@@ -337,7 +477,9 @@ export default function Dashboard() {
                 className="animate-scale-in"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
-                <CampaignCard campaign={campaign} />
+                <CampaignErrorBoundary>
+                  <CampaignCard campaign={campaign} />
+                </CampaignErrorBoundary>
               </div>
             ))}
           </div>
@@ -380,6 +522,7 @@ export default function Dashboard() {
           )}
         </>
       )}
-    </div>
+      </div>
+    </DashboardErrorBoundary>
   );
 }

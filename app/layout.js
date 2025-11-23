@@ -2,6 +2,7 @@ import './globals.css';
 import { Inter } from 'next/font/google';
 import { Providers } from '../lib/providers';
 import { Toaster } from 'react-hot-toast';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
@@ -23,31 +24,42 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={inter.variable}>
       <body className="font-sans antialiased">
-        <Providers>
-          <div className="min-h-screen bg-gradient-to-br from-celo-gray-50 via-white to-celo-gray-100">
-            {/* Background Pattern */}
-            <div className="fixed inset-0 bg-grid-pattern opacity-5 pointer-events-none" />
+        <ErrorBoundary>
+          <Providers>
+            <div className="min-h-screen bg-gradient-to-br from-celo-gray-50 via-white to-celo-gray-100">
+              {/* Background Pattern */}
+              <div className="fixed inset-0 bg-grid-pattern opacity-5 pointer-events-none" />
+              
+              {/* Header */}
+              <ErrorBoundary fallback={({ onRetry }) => (
+                <div className="bg-red-50 p-4 text-center">
+                  <p className="text-red-800">Header loading error. <button onClick={onRetry} className="underline">Retry</button></p>
+                </div>
+              )}>
+                <Header />
+              </ErrorBoundary>
+              
+              {/* Main Content */}
+              <main className="relative z-10">
+                <div className="container-responsive py-8">
+                  <ErrorBoundary>
+                    {children}
+                  </ErrorBoundary>
+                </div>
+              </main>
+              
+              {/* Footer */}
+              <ErrorBoundary fallback={() => null}>
+                <Footer />
+              </ErrorBoundary>
+            </div>
             
-            {/* Header */}
-            <Header />
-            
-            {/* Main Content */}
-            <main className="relative z-10">
-              <div className="container-responsive py-8">
-                {children}
-              </div>
-            </main>
-            
-            {/* Footer */}
-            <Footer />
-          </div>
-          
-          {/* Toast Notifications */}
-          <Toaster 
-            position="bottom-right"
-            toastOptions={{
-              duration: 4000,
-              className: 'animate-slide-up',
+            {/* Toast Notifications */}
+            <Toaster 
+              position="bottom-right"
+              toastOptions={{
+                duration: 4000,
+                className: 'animate-slide-up',
               style: {
                 background: 'rgba(30, 41, 59, 0.95)',
                 color: '#ffffff',
@@ -72,6 +84,7 @@ export default function RootLayout({ children }) {
             }}
           />
         </Providers>
+        </ErrorBoundary>
       </body>
     </html>
   );

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { CampaignCardSkeleton, LoadingSpinner } from './LoadingSkeletons';
 import { formatCurrency, formatTimeRemaining, getCampaignStatusColor, getCampaignStatusText, truncateAddress } from '../lib/utils';
 
 export default function CampaignCard({ campaign }) {
