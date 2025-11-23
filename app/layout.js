@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { reportWebVitals } from '../lib/performance';
 
 const inter = Inter({ 
   subsets: ['latin'],

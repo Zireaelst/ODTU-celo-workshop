@@ -15,6 +15,9 @@ module.exports = {
     'bg-emerald-100', 'text-emerald-800', 'border-emerald-200',
     'bg-indigo-100', 'text-indigo-800', 'border-indigo-200',
     'bg-orange-100', 'text-orange-800', 'border-orange-200',
+    // Social media button colors
+    'bg-black-500', 'hover:bg-black-600', 'bg-blue-500', 'hover:bg-blue-600',
+    'bg-sky-500', 'hover:bg-sky-600', 'bg-green-500', 'hover:bg-green-600',
   ],
   theme: {
     extend: {
@@ -79,7 +82,5 @@ module.exports = {
       },
     },
   },
-  plugins: [
-    require('@tailwindcss/line-clamp'),
-  ],
+  plugins: [],
 };

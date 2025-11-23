@@ -39,6 +39,25 @@ export default function Hero() {
               Connect your wallet to start creating and supporting campaigns
             </p>
           </div>
+          
+          {/* Demo Preview */}
+          <div className="mt-12 p-6 bg-white/80 backdrop-blur-sm rounded-2xl border border-white/50 max-w-2xl mx-auto">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium text-gray-600">Live Demo Available</span>
+            </div>
+            <p className="text-gray-700 mb-4">
+              🎉 Explore our platform with <strong>12 sample campaigns</strong> featuring real project data, 
+              images, and interactive features - no wallet connection required!
+            </p>
+            <div className="flex flex-wrap gap-2 justify-center">
+              <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">🎓 Education</span>
+              <span className="inline-block px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full">🌱 Environment</span>
+              <span className="inline-block px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-full">🎨 Arts</span>
+              <span className="inline-block px-3 py-1 bg-red-100 text-red-800 text-sm rounded-full">🏥 Health</span>
+              <span className="inline-block px-3 py-1 bg-yellow-100 text-yellow-800 text-sm rounded-full">💼 Business</span>
+            </div>
+          </div>
         </div>
 
         {/* Feature Cards */}
