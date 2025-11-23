@@ -5,6 +5,8 @@ import { useAccount } from 'wagmi';
 import Dashboard from '../components/Dashboard';
 import CreateCampaignModal from '../components/CreateCampaignModal';
 import Hero from '../components/Hero';
+import StatsSection from '../components/StatsSection';
+import FeaturedCampaigns from '../components/FeaturedCampaigns';
 
 export default function Home() {
   const { isConnected } = useAccount();
@@ -14,6 +16,11 @@ export default function Home() {
     return (
       <>
         <Hero />
+        <StatsSection />
+        <FeaturedCampaigns />
+        <div id="campaigns">
+          <Dashboard />
+        </div>
         <CreateCampaignModal
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}

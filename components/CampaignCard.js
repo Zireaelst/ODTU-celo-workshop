@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { CampaignCardSkeleton, LoadingSpinner } from './LoadingSkeletons';
 import { formatCurrency, formatTimeRemaining, getCampaignStatusColor, getCampaignStatusText, truncateAddress } from '../lib/utils';
 import { getCampaignCategory, getCategoryInfo, MOCK_CAMPAIGN_DATA } from '../lib/categories';
+import ShareButton from './ShareButton';
 
 export default function CampaignCard({ campaign, index = 0 }) {
   const router = useRouter();
@@ -30,8 +31,7 @@ export default function CampaignCard({ campaign, index = 0 }) {
   const progress = Math.min(Number(progressPercentage || 0), 100);
 
   // Get category info
-  const mockIndex = index % MOCK_CAMPAIGN_DATA.length;
-  const mockData = MOCK_CAMPAIGN_DATA[mockIndex];
+  const mockData = campaign.mockData || MOCK_CAMPAIGN_DATA[index % MOCK_CAMPAIGN_DATA.length];
   const categoryId = getCampaignCategory(mockData.title, mockData.description);
   const categoryInfo = getCategoryInfo(categoryId);
 
@@ -50,31 +50,49 @@ export default function CampaignCard({ campaign, index = 0 }) {
       className="card card-hover cursor-pointer group animate-scale-in"
     >
       {/* Campaign Image/Header */}
-      <div className="relative h-48 bg-gradient-to-br from-celo-green/10 via-celo-gold/10 to-celo-green/5 p-6 flex items-center justify-center">
-        <div className="absolute top-4 left-4">
-          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-${categoryInfo.color}-100 text-${categoryInfo.color}-800 border border-${categoryInfo.color}-200`}>
+      <div className="relative h-48 overflow-hidden bg-gradient-to-br from-celo-green/10 via-celo-gold/10 to-celo-green/5">
+        {/* Campaign Image */}
+        <img 
+          src={mockData.image} 
+          alt={mockData.title}
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          onError={(e) => {
+            e.target.style.display = 'none';
+          }}
+        />
+        
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-300"></div>
+        
+        <div className="absolute top-4 left-4 z-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-white/95 backdrop-blur-sm border shadow-sm">
             <span>{categoryInfo.icon}</span>
-            <span>{categoryInfo.name}</span>
+            <span className="font-semibold text-gray-800">{categoryInfo.name}</span>
           </div>
         </div>
-        <div className="absolute top-4 right-4">
+        
+        <div className="absolute top-4 right-4 z-10">
           <div className={`status-badge ${getStatusBadgeClass()}`}>
             {statusText}
           </div>
         </div>
         
-        {/* Campaign Icon */}
-        <div className={`w-16 h-16 bg-gradient-to-br from-celo-green to-celo-green-light rounded-2xl flex items-center justify-center shadow-celo transition-all duration-300 ${
-          isHovered ? 'scale-110 rotate-3' : ''
+        {/* Fallback Campaign Icon */}
+        <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${
+          mockData.image ? 'opacity-0' : 'opacity-100'
         }`}>
-          <span className="text-white font-bold text-2xl">
-            {creator ? creator.slice(2, 4).toUpperCase() : '??'}
-          </span>
+          <div className={`w-16 h-16 bg-gradient-to-br from-celo-green to-celo-green-light rounded-2xl flex items-center justify-center shadow-celo transition-all duration-300 ${
+            isHovered ? 'scale-110 rotate-3' : ''
+          }`}>
+            <span className="text-white font-bold text-2xl">
+              {creator ? creator.slice(2, 4).toUpperCase() : '??'}
+            </span>
+          </div>
+          
+          {/* Floating Elements */}
+          <div className="absolute top-6 left-6 w-3 h-3 bg-celo-gold rounded-full animate-bounce-soft opacity-60"></div>
+          <div className="absolute bottom-8 right-8 w-2 h-2 bg-celo-green rounded-full animate-bounce-soft opacity-40" style={{ animationDelay: '0.5s' }}></div>
         </div>
-        
-        {/* Floating Elements */}
-        <div className="absolute top-6 left-6 w-3 h-3 bg-celo-gold rounded-full animate-bounce-soft opacity-60"></div>
-        <div className="absolute bottom-8 right-8 w-2 h-2 bg-celo-green rounded-full animate-bounce-soft opacity-40" style={{ animationDelay: '0.5s' }}></div>
       </div>
 
       {/* Campaign Content */}
@@ -136,18 +154,30 @@ export default function CampaignCard({ campaign, index = 0 }) {
 
           {/* Stats Row */}
           <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1 text-gray-600">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                <span>{Number(contributorCount || 0)}</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1 text-gray-600">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  <span>{Number(contributorCount || 0)}</span>
+                </div>
+                <div className="flex items-center gap-1 text-gray-600">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>{formatTimeRemaining(Number(timeRemaining || 0))}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-1 text-gray-600">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>{formatTimeRemaining(Number(timeRemaining || 0))}</span>
+              
+              <div onClick={(e) => e.stopPropagation()}>
+                <ShareButton
+                  campaign={campaign}
+                  campaignAddress={address}
+                  mockData={mockData}
+                  variant="compact"
+                  showLabels={false}
+                />
               </div>
             </div>
           </div>

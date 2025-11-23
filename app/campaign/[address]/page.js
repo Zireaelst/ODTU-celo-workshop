@@ -7,6 +7,8 @@ import { useCampaign, useContribute, useWithdraw, useRefund, useContribution } f
 import { useCUSDBalance, useCUSDAllowance, useApproveCUSD } from '../../../hooks/useToken';
 import { CampaignErrorBoundary, WalletErrorBoundary } from '../../../components/ErrorBoundary';
 import { formatCurrency, formatTimeRemaining, formatDate, getCampaignStatusColor, getCampaignStatusText, truncateAddress, parseCurrency } from '../../../lib/utils';
+import ShareButton from '../../../components/ShareButton';
+import { MOCK_CAMPAIGN_DATA, getCampaignCategory } from '../../../lib/categories';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 
@@ -19,6 +21,10 @@ export default function CampaignDetail() {
   const [isContributeModalOpen, setIsContributeModalOpen] = useState(false);
 
   const campaignAddress = params?.address;
+
+  // Mock campaign for demo (if no real campaign found)
+  const mockCampaignIndex = campaignAddress ? parseInt(campaignAddress.slice(-2), 16) % MOCK_CAMPAIGN_DATA.length : 0;
+  const mockCampaign = MOCK_CAMPAIGN_DATA[mockCampaignIndex];
 
   // Campaign data
   const { campaignInfo, progressPercentage, timeRemaining, isLoading, refetch } = useCampaign(campaignAddress);
@@ -81,16 +87,38 @@ export default function CampaignDetail() {
     );
   }
 
-  if (isLoading || !campaignInfo) {
+  if (isLoading) {
     return <CampaignDetailSkeleton />;
   }
 
-  const [creator, goalAmount, deadline, pledgedAmount, state] = campaignInfo;
+  // Use mock data if no real campaign found
+  const useMockData = !campaignInfo;
+
+  // Extract campaign data (real or mock)
+  let creator, goalAmount, deadline, pledgedAmount, state, mockProgressPercentage, mockTimeRemaining, mockContributorCount;
+  
+  if (useMockData) {
+    creator = mockCampaign.creator;
+    goalAmount = mockCampaign.goalAmount + '000000000000000000'; // Convert to wei
+    deadline = Math.floor(mockCampaign.deadline / 1000);
+    pledgedAmount = mockCampaign.pledgedAmount + '000000000000000000'; // Convert to wei
+    state = mockCampaign.state;
+    mockProgressPercentage = Math.min(100, (parseFloat(mockCampaign.pledgedAmount) / parseFloat(mockCampaign.goalAmount)) * 100);
+    mockTimeRemaining = Math.max(0, mockCampaign.deadline - Date.now());
+    mockContributorCount = mockCampaign.contributorCount;
+  } else {
+    [creator, goalAmount, deadline, pledgedAmount, state] = campaignInfo;
+  }
+
+  const displayProgressPercentage = useMockData ? mockProgressPercentage : progressPercentage;
+  const displayTimeRemaining = useMockData ? mockTimeRemaining : timeRemaining;
+  const displayContributorCount = useMockData ? mockContributorCount : 0; // Would need to fetch from contract
+
   const isCreator = userAddress && creator && userAddress.toLowerCase() === creator.toLowerCase();
   const hasContributed = userContribution && userContribution > 0n;
   const needsApproval = allowance < contributeAmountWei;
-  const statusColor = getCampaignStatusColor(state, timeRemaining);
-  const statusText = getCampaignStatusText(state, timeRemaining);
+  const statusColor = getCampaignStatusColor(state, displayTimeRemaining);
+  const statusText = getCampaignStatusText(state, displayTimeRemaining);
 
   const handleContribute = () => {
     if (!contributeAmount || Number(contributeAmount) <= 0) {
@@ -133,28 +161,63 @@ export default function CampaignDetail() {
 
         <div className="max-w-6xl mx-auto space-y-8">
           {/* Campaign Hero Section */}
-          <div className="card p-8">
-            <div className="flex flex-col lg:flex-row gap-8">
-              {/* Main Campaign Info */}
-              <div className="flex-1 space-y-6">
-                {/* Header */}
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-celo-green to-celo-green-light rounded-2xl flex items-center justify-center shadow-lg">
-                      <span className="text-white font-bold text-xl">
-                        {creator ? creator.slice(2, 4).toUpperCase() : '??'}
-                      </span>
-                    </div>
-                    <div>
-                      <h1 className="text-3xl font-bold text-gray-900 mb-2">Campaign Details</h1>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                        <span>Created by {truncateAddress(creator)}</span>
+          <div className="card overflow-hidden">
+            {/* Campaign Image */}
+            {useMockData && mockCampaign.image && (
+              <div className="relative h-64 lg:h-80">
+                <img 
+                  src={mockCampaign.image} 
+                  alt={mockCampaign.title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-black/30"></div>
+                <div className="absolute bottom-6 left-6 text-white">
+                  <h1 className="text-4xl font-bold mb-2">{mockCampaign.title}</h1>
+                  <p className="text-lg text-white/90">{mockCampaign.description}</p>
+                </div>
+              </div>
+            )}
+            
+            <div className="p-8">
+              <div className="flex flex-col lg:flex-row gap-8">
+                {/* Main Campaign Info */}
+                <div className="flex-1 space-y-6">
+                  {/* Header */}
+                  {!useMockData && (
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 bg-gradient-to-br from-celo-green to-celo-green-light rounded-2xl flex items-center justify-center shadow-lg">
+                          <span className="text-white font-bold text-xl">
+                            {creator ? creator.slice(2, 4).toUpperCase() : '??'}
+                          </span>
+                        </div>
+                        <div>
+                          <h1 className="text-3xl font-bold text-gray-900 mb-2">Campaign Details</h1>
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            <span>Created by {truncateAddress(creator)}</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
+
+                  {/* Creator Info for Mock Data */}
+                  {useMockData && (
+                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+                      <div className="w-12 h-12 bg-gradient-to-br from-celo-green to-celo-green-light rounded-xl flex items-center justify-center shadow-sm">
+                        <span className="text-white font-bold">
+                          {creator ? creator.slice(2, 4).toUpperCase() : '??'}
+                        </span>
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900">Campaign Creator</div>
+                        <div className="text-sm text-gray-600">{truncateAddress(creator)}</div>
+                      </div>
+                    </div>
+                  )}
                   
                   <div className={`px-4 py-2 rounded-full text-sm font-semibold ${
                     statusColor === 'text-green-600' ? 'bg-green-100 text-green-700' :
@@ -171,14 +234,14 @@ export default function CampaignDetail() {
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-gray-800">Progress</h3>
                     <span className="text-sm text-gray-600">
-                      {Number(progressPercentage || 0)}% completed
+                      {Number(displayProgressPercentage || 0)}% completed
                     </span>
                   </div>
                   
                   <div className="progress-bar">
                     <div 
                       className="progress-fill progress-glow"
-                      style={{ width: `${Math.min(Number(progressPercentage || 0), 100)}%` }}
+                      style={{ width: `${Math.min(Number(displayProgressPercentage || 0), 100)}%` }}
                     />
                   </div>
                   
@@ -202,15 +265,21 @@ export default function CampaignDetail() {
                   </div>
                   <div className="stat-card">
                     <div className="stat-value text-gray-700">
-                      {formatTimeRemaining(Number(timeRemaining || 0))}
+                      {formatTimeRemaining(Number(displayTimeRemaining || 0))}
                     </div>
                     <div className="stat-label">Time Remaining</div>
                   </div>
                   <div className="stat-card">
                     <div className="stat-value text-celo-gold">
-                      {Number(progressPercentage || 0)}%
+                      {Number(displayProgressPercentage || 0)}%
                     </div>
                     <div className="stat-label">Progress</div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-value text-purple-600">
+                      {displayContributorCount}
+                    </div>
+                    <div className="stat-label">Contributors</div>
                   </div>
                 </div>
               </div>
@@ -257,6 +326,25 @@ export default function CampaignDetail() {
               </div>
             </div>
           )}
+
+          {/* Share Campaign Section */}
+          <div className="card p-6">
+            <ShareButton
+              campaign={{
+                creator,
+                goalAmount,
+                pledgedAmount,
+                state,
+                timeRemaining: displayTimeRemaining,
+                progressPercentage: displayProgressPercentage,
+                contributorCount: displayContributorCount
+              }}
+              campaignAddress={params.address}
+              mockData={useMockData ? mockCampaign : null}
+              variant="default"
+              showLabels={true}
+            />
+          </div>
 
           {/* Action Cards */}
           <div className="grid lg:grid-cols-2 gap-8">

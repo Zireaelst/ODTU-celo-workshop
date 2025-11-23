@@ -6,7 +6,7 @@ import CampaignCard from './CampaignCard';
 import { DashboardSkeleton, EmptyStateSkeleton } from './LoadingSkeletons';
 import { DashboardErrorBoundary, CampaignErrorBoundary } from './ErrorBoundary';
 import { formatCurrency } from '../lib/utils';
-import { CAMPAIGN_CATEGORIES, getCampaignCategory, getCategoryInfo, MOCK_CAMPAIGN_DATA } from '../lib/categories';
+import { CAMPAIGN_CATEGORIES, getCampaignCategory, getCategoryInfo, MOCK_CAMPAIGN_DATA, generateMockCampaign } from '../lib/categories';
 
 const ITEMS_PER_PAGE = 6;
 
@@ -20,10 +20,19 @@ export default function Dashboard() {
   const [progressFilter, setProgressFilter] = useState('all'); // progress range filter
   const [categoryFilter, setCategoryFilter] = useState('all'); // category filter
 
-  const { campaignAddresses, activeCampaignAddresses, isLoading: factoryLoading } = useCampaignFactory();
-  const { campaigns, isLoading: campaignsLoading } = useCampaignDetails(campaignAddresses);
+  // Generate mock campaigns for demo
+  const mockCampaigns = useMemo(() => {
+    return Array.from({ length: MOCK_CAMPAIGN_DATA.length }, (_, index) => 
+      generateMockCampaign(index)
+    );
+  }, []);
 
-  const isLoading = factoryLoading || campaignsLoading;
+  // Use real campaigns if available, otherwise use mock data
+  const { campaignAddresses, activeCampaignAddresses, isLoading: factoryLoading } = useCampaignFactory();
+  const { campaigns: realCampaigns, isLoading: campaignsLoading } = useCampaignDetails(campaignAddresses);
+  
+  const campaigns = realCampaigns && realCampaigns.length > 0 ? realCampaigns : mockCampaigns;
+  const isLoading = (factoryLoading || campaignsLoading) && (!campaigns || campaigns.length === 0);
 
   // Debounced search effect
   useEffect(() => {
@@ -56,13 +65,18 @@ export default function Dashboard() {
       );
     }
 
-    // Filter by search term (search in creator address and campaign address)
+    // Filter by search term (search in title, description, creator address and campaign address)
     if (debouncedSearchTerm) {
       const searchLower = debouncedSearchTerm.toLowerCase();
-      filtered = filtered.filter(campaign =>
-        campaign.creator?.toLowerCase().includes(searchLower) ||
-        campaign.address?.toLowerCase().includes(searchLower)
-      );
+      filtered = filtered.filter(campaign => {
+        const mockData = campaign.mockData || MOCK_CAMPAIGN_DATA[campaigns.indexOf(campaign) % MOCK_CAMPAIGN_DATA.length];
+        return (
+          mockData.title.toLowerCase().includes(searchLower) ||
+          mockData.description.toLowerCase().includes(searchLower) ||
+          campaign.creator?.toLowerCase().includes(searchLower) ||
+          campaign.address?.toLowerCase().includes(searchLower)
+        );
+      });
     }
 
     // Filter by funding status
@@ -111,9 +125,8 @@ export default function Dashboard() {
     // Filter by category
     if (categoryFilter !== 'all') {
       filtered = filtered.filter(campaign => {
-        // Get mock campaign data for this campaign (simulation)
-        const mockIndex = campaigns.indexOf(campaign) % MOCK_CAMPAIGN_DATA.length;
-        const mockData = MOCK_CAMPAIGN_DATA[mockIndex];
+        // Use mock data if available, otherwise simulate
+        const mockData = campaign.mockData || MOCK_CAMPAIGN_DATA[campaigns.indexOf(campaign) % MOCK_CAMPAIGN_DATA.length];
         const category = getCampaignCategory(mockData.title, mockData.description);
         return category === categoryFilter;
       });
