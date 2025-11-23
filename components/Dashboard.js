@@ -6,6 +6,7 @@ import CampaignCard from './CampaignCard';
 import { DashboardSkeleton, EmptyStateSkeleton } from './LoadingSkeletons';
 import { DashboardErrorBoundary, CampaignErrorBoundary } from './ErrorBoundary';
 import { formatCurrency } from '../lib/utils';
+import { CAMPAIGN_CATEGORIES, getCampaignCategory, getCategoryInfo, MOCK_CAMPAIGN_DATA } from '../lib/categories';
 
 const ITEMS_PER_PAGE = 6;
 
@@ -17,6 +18,7 @@ export default function Dashboard() {
   const [sortBy, setSortBy] = useState('newest');
   const [filterBy, setFilterBy] = useState('all'); // funding status filter
   const [progressFilter, setProgressFilter] = useState('all'); // progress range filter
+  const [categoryFilter, setCategoryFilter] = useState('all'); // category filter
 
   const { campaignAddresses, activeCampaignAddresses, isLoading: factoryLoading } = useCampaignFactory();
   const { campaigns, isLoading: campaignsLoading } = useCampaignDetails(campaignAddresses);
@@ -35,7 +37,7 @@ export default function Dashboard() {
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(0);
-  }, [debouncedSearchTerm, activeTab, sortBy, filterBy, progressFilter]);
+  }, [debouncedSearchTerm, activeTab, sortBy, filterBy, progressFilter, categoryFilter]);
 
   // Filter and search campaigns
   const filteredCampaigns = useMemo(() => {
@@ -104,6 +106,17 @@ export default function Dashboard() {
       filtered = filtered.filter(campaign => 
         Number(campaign.progressPercentage || 0) >= 100
       );
+    }
+
+    // Filter by category
+    if (categoryFilter !== 'all') {
+      filtered = filtered.filter(campaign => {
+        // Get mock campaign data for this campaign (simulation)
+        const mockIndex = campaigns.indexOf(campaign) % MOCK_CAMPAIGN_DATA.length;
+        const mockData = MOCK_CAMPAIGN_DATA[mockIndex];
+        const category = getCampaignCategory(mockData.title, mockData.description);
+        return category === categoryFilter;
+      });
     }
 
     // Sort campaigns
@@ -309,11 +322,26 @@ export default function Dashboard() {
               <option value="75-100">🟩 75-100%</option>
               <option value="100+">🎉 Over-funded</option>
             </select>
+
+            {/* Category Filter */}
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="input-field min-w-[140px]"
+              title="Filter by category"
+            >
+              <option value="all">All Categories</option>
+              {CAMPAIGN_CATEGORIES.map(category => (
+                <option key={category.id} value={category.id}>
+                  {category.icon} {category.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
         {/* Active Filters Display */}
-        {(debouncedSearchTerm || filterBy !== 'all' || progressFilter !== 'all') && (
+        {(debouncedSearchTerm || filterBy !== 'all' || progressFilter !== 'all' || categoryFilter !== 'all') && (
           <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-gray-100">
             <span className="text-sm text-gray-600 font-medium">Active filters:</span>
             
@@ -359,11 +387,26 @@ export default function Dashboard() {
               </div>
             )}
 
+            {categoryFilter !== 'all' && (
+              <div className="flex items-center gap-1 bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm">
+                <span>Category: {getCategoryInfo(categoryFilter).name}</span>
+                <button
+                  onClick={() => setCategoryFilter('all')}
+                  className="text-indigo-600 hover:text-indigo-800"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
+
             <button
               onClick={() => {
                 setSearchTerm('');
                 setFilterBy('all');
                 setProgressFilter('all');
+                setCategoryFilter('all');
               }}
               className="text-sm text-gray-500 hover:text-gray-700 underline ml-2"
             >
@@ -478,7 +521,7 @@ export default function Dashboard() {
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <CampaignErrorBoundary>
-                  <CampaignCard campaign={campaign} />
+                  <CampaignCard campaign={campaign} index={campaigns.indexOf(campaign)} />
                 </CampaignErrorBoundary>
               </div>
             ))}

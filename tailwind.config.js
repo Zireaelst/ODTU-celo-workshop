@@ -5,6 +5,17 @@ module.exports = {
     './components/**/*.{js,ts,jsx,tsx,mdx}',
     './app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
+  safelist: [
+    // Category colors
+    'bg-blue-100', 'text-blue-800', 'border-blue-200',
+    'bg-green-100', 'text-green-800', 'border-green-200',
+    'bg-purple-100', 'text-purple-800', 'border-purple-200',
+    'bg-pink-100', 'text-pink-800', 'border-pink-200',
+    'bg-red-100', 'text-red-800', 'border-red-200',
+    'bg-emerald-100', 'text-emerald-800', 'border-emerald-200',
+    'bg-indigo-100', 'text-indigo-800', 'border-indigo-200',
+    'bg-orange-100', 'text-orange-800', 'border-orange-200',
+  ],
   theme: {
     extend: {
       colors: {
@@ -68,5 +79,7 @@ module.exports = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/line-clamp'),
+  ],
 };

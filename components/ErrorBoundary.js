@@ -54,12 +54,6 @@ export class ErrorBoundary extends Component {
 
   render() {
     if (this.state.hasError) {
-      const { fallback: Fallback } = this.props;
-      
-      if (Fallback) {
-        return <Fallback onRetry={this.handleRetry} error={this.state.error} />;
-      }
-
       return (
         <DefaultErrorFallback 
           onRetry={this.handleRetry}
@@ -193,106 +187,151 @@ function DefaultErrorFallback({ onRetry, onReload, error, errorInfo, errorId }) 
 // Specific Error Boundaries for different components
 
 // Campaign Error Boundary
-export function CampaignErrorBoundary({ children }) {
-  return (
-    <ErrorBoundary fallback={CampaignErrorFallback}>
-      {children}
-    </ErrorBoundary>
-  );
-}
+export class CampaignErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
 
-function CampaignErrorFallback({ onRetry }) {
-  return (
-    <div className="card p-6 text-center border-2 border-red-200 bg-red-50">
-      <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-        <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      </div>
-      <h3 className="text-lg font-semibold text-red-900 mb-2">Campaign Error</h3>
-      <p className="text-red-700 mb-4">
-        Unable to load campaign data. This might be a network issue or the campaign may not exist.
-      </p>
-      <button onClick={onRetry} className="btn-outline text-red-600 border-red-300 hover:bg-red-100">
-        Try Again
-      </button>
-    </div>
-  );
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Campaign Error:', error, errorInfo);
+  }
+
+  handleRetry = () => {
+    this.setState({ hasError: false });
+  };
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="card p-6 text-center border-2 border-red-200 bg-red-50">
+          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-red-900 mb-2">Campaign Error</h3>
+          <p className="text-red-700 mb-4">
+            Unable to load campaign data. This might be a network issue or the campaign may not exist.
+          </p>
+          <button onClick={this.handleRetry} className="btn-outline text-red-600 border-red-300 hover:bg-red-100">
+            Try Again
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
 }
 
 // Dashboard Error Boundary
-export function DashboardErrorBoundary({ children }) {
-  return (
-    <ErrorBoundary fallback={DashboardErrorFallback}>
-      {children}
-    </ErrorBoundary>
-  );
-}
+export class DashboardErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
 
-function DashboardErrorFallback({ onRetry }) {
-  return (
-    <div className="text-center py-12">
-      <div className="card p-8 max-w-md mx-auto border-2 border-yellow-200 bg-yellow-50">
-        <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Dashboard Error:', error, errorInfo);
+  }
+
+  handleRetry = () => {
+    this.setState({ hasError: false });
+  };
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="text-center py-12">
+          <div className="card p-8 max-w-md mx-auto border-2 border-yellow-200 bg-yellow-50">
+            <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-yellow-900 mb-3">Dashboard Loading Error</h3>
+            <p className="text-yellow-800 mb-6">
+              We're having trouble loading the campaigns. This might be a network connectivity issue.
+            </p>
+            <div className="space-y-3">
+              <button onClick={this.handleRetry} className="btn-primary w-full">
+                Retry Loading
+              </button>
+              <Link href="/create" className="btn-outline w-full">
+                Create Campaign Instead
+              </Link>
+            </div>
+          </div>
         </div>
-        <h3 className="text-xl font-semibold text-yellow-900 mb-3">Dashboard Loading Error</h3>
-        <p className="text-yellow-800 mb-6">
-          We're having trouble loading the campaigns. This might be a network connectivity issue.
-        </p>
-        <div className="space-y-3">
-          <button onClick={onRetry} className="btn-primary w-full">
-            Retry Loading
-          </button>
-          <Link href="/create" className="btn-outline w-full">
-            Create Campaign Instead
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
+      );
+    }
+
+    return this.props.children;
+  }
 }
 
 // Wallet Error Boundary
-export function WalletErrorBoundary({ children }) {
-  return (
-    <ErrorBoundary fallback={WalletErrorFallback}>
-      {children}
-    </ErrorBoundary>
-  );
-}
+export class WalletErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
 
-function WalletErrorFallback({ onRetry }) {
-  return (
-    <div className="bg-orange-50 border border-orange-200 rounded-xl p-6">
-      <div className="flex items-start gap-3">
-        <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
-          <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <div className="flex-1">
-          <h3 className="font-semibold text-orange-900 mb-1">Wallet Connection Error</h3>
-          <p className="text-sm text-orange-800 mb-3">
-            There was an issue connecting to your wallet or loading wallet data.
-          </p>
-          <div className="flex gap-2">
-            <button onClick={onRetry} className="btn-sm btn-outline border-orange-300 text-orange-700">
-              Retry
-            </button>
-            <button 
-              onClick={() => window.location.reload()} 
-              className="btn-sm btn-ghost text-orange-700"
-            >
-              Refresh Page
-            </button>
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Wallet Error:', error, errorInfo);
+  }
+
+  handleRetry = () => {
+    this.setState({ hasError: false });
+  };
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="bg-orange-50 border border-orange-200 rounded-xl p-6">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-orange-900 mb-1">Wallet Connection Error</h3>
+              <p className="text-sm text-orange-800 mb-3">
+                There was an issue connecting to your wallet or loading wallet data.
+              </p>
+              <div className="flex gap-2">
+                <button onClick={this.handleRetry} className="btn-sm btn-outline border-orange-300 text-orange-700">
+                  Retry
+                </button>
+                <button 
+                  onClick={() => window.location.reload()} 
+                  className="btn-sm btn-ghost text-orange-700"
+                >
+                  Refresh Page
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-  );
+      );
+    }
+
+    return this.props.children;
+  }
 }
 
 // Hook for manually triggering error boundaries (for testing)

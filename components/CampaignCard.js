@@ -4,8 +4,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CampaignCardSkeleton, LoadingSpinner } from './LoadingSkeletons';
 import { formatCurrency, formatTimeRemaining, getCampaignStatusColor, getCampaignStatusText, truncateAddress } from '../lib/utils';
+import { getCampaignCategory, getCategoryInfo, MOCK_CAMPAIGN_DATA } from '../lib/categories';
 
-export default function CampaignCard({ campaign }) {
+export default function CampaignCard({ campaign, index = 0 }) {
   const router = useRouter();
   const [isHovered, setIsHovered] = useState(false);
 
@@ -28,6 +29,12 @@ export default function CampaignCard({ campaign }) {
   const statusText = getCampaignStatusText(state, timeRemaining);
   const progress = Math.min(Number(progressPercentage || 0), 100);
 
+  // Get category info
+  const mockIndex = index % MOCK_CAMPAIGN_DATA.length;
+  const mockData = MOCK_CAMPAIGN_DATA[mockIndex];
+  const categoryId = getCampaignCategory(mockData.title, mockData.description);
+  const categoryInfo = getCategoryInfo(categoryId);
+
   // Get status badge styles
   const getStatusBadgeClass = () => {
     if (state === 0 && Number(timeRemaining) > 0) return 'badge-info';
@@ -44,6 +51,12 @@ export default function CampaignCard({ campaign }) {
     >
       {/* Campaign Image/Header */}
       <div className="relative h-48 bg-gradient-to-br from-celo-green/10 via-celo-gold/10 to-celo-green/5 p-6 flex items-center justify-center">
+        <div className="absolute top-4 left-4">
+          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-${categoryInfo.color}-100 text-${categoryInfo.color}-800 border border-${categoryInfo.color}-200`}>
+            <span>{categoryInfo.icon}</span>
+            <span>{categoryInfo.name}</span>
+          </div>
+        </div>
         <div className="absolute top-4 right-4">
           <div className={`status-badge ${getStatusBadgeClass()}`}>
             {statusText}
@@ -66,6 +79,16 @@ export default function CampaignCard({ campaign }) {
 
       {/* Campaign Content */}
       <div className="p-6 space-y-4">
+        {/* Campaign Title & Description */}
+        <div className="space-y-2">
+          <h3 className="font-bold text-lg text-gray-900 line-clamp-2 group-hover:text-celo-green transition-colors">
+            {mockData.title}
+          </h3>
+          <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
+            {mockData.description}
+          </p>
+        </div>
+
         {/* Creator Info */}
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">

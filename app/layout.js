@@ -17,7 +17,11 @@ export const metadata = {
   description: 'Create and fund campaigns on Celo blockchain with transparency and security',
   keywords: 'Celo, crowdfunding, blockchain, cUSD, decentralized, fundraising, DeFi',
   authors: [{ name: 'CeloImpact Team' }],
-  viewport: 'width=device-width, initial-scale=1',
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }) {
@@ -31,11 +35,7 @@ export default function RootLayout({ children }) {
               <div className="fixed inset-0 bg-grid-pattern opacity-5 pointer-events-none" />
               
               {/* Header */}
-              <ErrorBoundary fallback={({ onRetry }) => (
-                <div className="bg-red-50 p-4 text-center">
-                  <p className="text-red-800">Header loading error. <button onClick={onRetry} className="underline">Retry</button></p>
-                </div>
-              )}>
+              <ErrorBoundary>
                 <Header />
               </ErrorBoundary>
               
@@ -49,7 +49,7 @@ export default function RootLayout({ children }) {
               </main>
               
               {/* Footer */}
-              <ErrorBoundary fallback={() => null}>
+              <ErrorBoundary>
                 <Footer />
               </ErrorBoundary>
             </div>
