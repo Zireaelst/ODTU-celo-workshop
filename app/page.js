@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useAccount } from 'wagmi';
 import Dashboard from '../components/Dashboard';
 import CreateCampaignModal from '../components/CreateCampaignModal';
-import Hero from '../components/Hero';
+import AceternityHero from '../components/AceternityHero';
 import StatsSection from '../components/StatsSection';
 import FeaturedCampaigns from '../components/FeaturedCampaigns';
 
@@ -15,7 +15,7 @@ export default function Home() {
   if (!isConnected) {
     return (
       <>
-        <Hero />
+        <AceternityHero />
         <StatsSection />
         <FeaturedCampaigns />
         <div id="campaigns">

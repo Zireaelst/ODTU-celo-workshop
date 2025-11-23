@@ -2,6 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Clock, Users, Target, TrendingUp } from 'lucide-react';
+import { Card, CardContent, CardHeader } from './ui/card';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Progress } from './ui/progress';
 import { CampaignCardSkeleton, LoadingSpinner } from './LoadingSkeletons';
 import { formatCurrency, formatTimeRemaining, getCampaignStatusColor, getCampaignStatusText, truncateAddress } from '../lib/utils';
 import { getCampaignCategory, getCategoryInfo, MOCK_CAMPAIGN_DATA } from '../lib/categories';
@@ -43,11 +48,11 @@ export default function CampaignCard({ campaign, index = 0 }) {
   };
 
   return (
-    <div
+    <Card
       onClick={handleCardClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="card card-hover cursor-pointer group animate-scale-in"
+      className="cursor-pointer group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 overflow-hidden"
     >
       {/* Campaign Image/Header */}
       <div className="relative h-48 overflow-hidden bg-gradient-to-br from-celo-green/10 via-celo-gold/10 to-celo-green/5">
@@ -65,16 +70,16 @@ export default function CampaignCard({ campaign, index = 0 }) {
         <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-300"></div>
         
         <div className="absolute top-4 left-4 z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-white/95 backdrop-blur-sm border shadow-sm">
-            <span>{categoryInfo.icon}</span>
-            <span className="font-semibold text-gray-800">{categoryInfo.name}</span>
-          </div>
+          <Badge variant="secondary" className="bg-white/95 backdrop-blur-sm border shadow-sm">
+            <span className="mr-1">{categoryInfo.icon}</span>
+            {categoryInfo.name}
+          </Badge>
         </div>
         
         <div className="absolute top-4 right-4 z-10">
-          <div className={`status-badge ${getStatusBadgeClass()}`}>
+          <Badge variant={state === 0 && Number(timeRemaining) > 0 ? "info" : state === 1 ? "success" : "destructive"}>
             {statusText}
-          </div>
+          </Badge>
         </div>
         
         {/* Fallback Campaign Icon */}
@@ -96,7 +101,7 @@ export default function CampaignCard({ campaign, index = 0 }) {
       </div>
 
       {/* Campaign Content */}
-      <div className="p-6 space-y-4">
+      <CardContent className="space-y-4">
         {/* Campaign Title & Description */}
         <div className="space-y-2">
           <h3 className="font-bold text-lg text-gray-900 line-clamp-2 group-hover:text-celo-green transition-colors">
@@ -110,9 +115,7 @@ export default function CampaignCard({ campaign, index = 0 }) {
         {/* Creator Info */}
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-            <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
+            <Users className="w-4 h-4 text-gray-600" />
           </div>
           <div>
             <div className="font-medium text-gray-900 text-sm">
@@ -145,27 +148,18 @@ export default function CampaignCard({ campaign, index = 0 }) {
           </div>
 
           {/* Enhanced Progress Bar */}
-          <div className="progress-bar">
-            <div 
-              className={`progress-fill ${progress >= 100 ? 'progress-glow' : ''}`}
-              style={{ width: `${progress}%` }}
-            />
-          </div>
+          <Progress value={progress} className="h-2" />
 
           {/* Stats Row */}
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1 text-gray-600">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
+                  <Users className="w-4 h-4" />
                   <span>{Number(contributorCount || 0)}</span>
                 </div>
                 <div className="flex items-center gap-1 text-gray-600">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                  <Clock className="w-4 h-4" />
                   <span>{formatTimeRemaining(Number(timeRemaining || 0))}</span>
                 </div>
               </div>
@@ -186,37 +180,30 @@ export default function CampaignCard({ campaign, index = 0 }) {
         {/* Action Button */}
         <div className="pt-2">
           {state === 0 && Number(timeRemaining) > 0 ? (
-            <button 
-              className="btn-primary w-full group"
+            <Button 
+              className="w-full group"
               onClick={(e) => {
                 e.stopPropagation();
                 handleCardClick();
               }}
             >
-              <span className="flex items-center justify-center gap-2">
-                Support This Campaign
-                <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </span>
-            </button>
+              <Target className="w-4 h-4 mr-2" />
+              Support This Campaign
+              <TrendingUp className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+            </Button>
           ) : state === 1 ? (
             <div className="flex items-center justify-center py-3 bg-emerald-50 text-emerald-700 font-semibold rounded-xl border border-emerald-200">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+              <TrendingUp className="w-5 h-5 mr-2" />
               Campaign Successful
             </div>
           ) : (
             <div className="flex items-center justify-center py-3 bg-red-50 text-red-700 font-semibold rounded-xl border border-red-200">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+              <Clock className="w-5 h-5 mr-2" />
               Campaign Ended
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

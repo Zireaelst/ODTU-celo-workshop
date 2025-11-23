@@ -2,6 +2,11 @@
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useCampaignFactory, useCampaignDetails } from '../hooks/useCampaignFactory';
+import { Search, Filter, Grid, List, TrendingUp, Users, Clock, Target } from 'lucide-react';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Badge } from './ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import CampaignCard from './CampaignCard';
 import { DashboardSkeleton, EmptyStateSkeleton } from './LoadingSkeletons';
 import { DashboardErrorBoundary, CampaignErrorBoundary } from './ErrorBoundary';

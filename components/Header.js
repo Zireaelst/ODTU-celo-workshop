@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
 import Link from 'next/link';
+import { Sparkles } from 'lucide-react';
 import { HeaderSkeleton, LoadingSpinner } from './LoadingSkeletons';
 import CeloNetworkSwitcher from './CeloNetworkSwitcher';
 
@@ -30,7 +31,7 @@ export default function Header() {
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 group">
             <div className="w-8 h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-celo-green to-celo-green-light rounded-xl flex items-center justify-center shadow-celo group-hover:shadow-lg transition-all duration-300 group-hover:scale-105">
-              <span className="text-white font-bold text-lg lg:text-xl">🌱</span>
+              <Sparkles className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
             </div>
             <div className="hidden sm:block">
               <span className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-celo-green to-celo-green-dark bg-clip-text text-transparent">
